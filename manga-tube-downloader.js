@@ -1,10 +1,12 @@
 // ==UserScript==
-// @name         Naruto-Tube.org - Manga Downloader
+// @name         Manga-Tube Downloader
 // @namespace    http://tampermonkey.net/
 // @version      1.3
-// @description  Ein Tampermonkey-Script um Manga-Kapitel von http://onepiece-tube.com als PDF herunterzuladen.
+// @description  Ein Tampermonkey-Script um Manga-Kapitel von http://onepiece-tube.com und http://naruto-tube.org als PDF herunterzuladen.
 // @author       LoudBomb
 // @icon         https://i.imgur.com/SAtFjAa.png
+// @match        http://onepiece-tube.com/kapitel-mangaliste*
+// @match        http://manga-lesen.com/kapitel/*
 // @match        http://naruto-tube.org/boruto-kapitel-mangaliste*
 // @match        http://naruto-tube.org/manga/boruto-kapitel/*
 // @match        http://naruto-tube.org/shippuuden-kapitel-mangaliste*
@@ -42,6 +44,11 @@
         sDocname = "Naruto Shippuuden";
         sIMGsrc = "http://naruto-tube.org/manga/shippuuden-kapitel/";
         sParenthostname = "naruto-tube.org";
+    }
+    if((/onepiece/).test(document.location.href)){
+        sDocname = "One Piece";
+        sIMGsrc = "http://manga-lesen.com/kapitel/";
+        sParenthostname = "onepiece-tube.com";
     }
 
     /**Helper function inIframe
@@ -89,7 +96,7 @@
     };
     /**----------------------------------------------------------
 
-    /**------------ html5 Postmessage Function iFrame---------------------------*/
+     /**------------ html5 Postmessage Function iFrame---------------------------*/
     function createiFrame(i, imgtype, element){
         $('<iframe>', {
             src: aIMGUrl[i] + imgtype,

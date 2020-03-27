@@ -1,5 +1,5 @@
-title: Naruto-tube.org Manga downloader by LoudBomb
-description: Ein Tampermonkey-Script um Manga-Kapitel von http://naruto-tube.org/ als PDF herunterzuladen.
+title: Manga-Tube Downloader
+description: Ein Tampermonkey-Script um Manga-Kapitel von http://onepiece-tube.com und http://naruto-tube.org als PDF herunterzuladen.
 show_downloads: true
 google_analytics: UA-146362439-1
 theme: jekyll-theme-hacker
