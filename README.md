@@ -3,7 +3,7 @@
 ## 1. Installiere die Chrome Extension [Tampermonkey](https://www.tampermonkey.net)
 ![Tampermonkey Installation](/img/tm-install.png)
 
-## 2.   Installiere das Script: [Manga-Tube Downloader]
+## 2.   Installiere das Script: [Manga-Tube Downloader](https://greasyfork.org/de/scripts/389324-manga-tube-downloader)
 ![Script Installation](/img/js-install.png)
 
 ## 3.  Besuche [onepiece-tube.com](http://onepiece-tube.com/kapitel-mangaliste)
