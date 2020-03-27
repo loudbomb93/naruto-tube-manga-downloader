@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Manga-Tube Downloader
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      2.0
 // @description  Ein Tampermonkey-Script um Manga-Kapitel von http://onepiece-tube.com und http://naruto-tube.org als PDF herunterzuladen.
 // @author       LoudBomb
 // @icon         https://i.imgur.com/SAtFjAa.png
