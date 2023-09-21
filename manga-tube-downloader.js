@@ -1,18 +1,25 @@
 // ==UserScript==
 // @name         Manga-Tube Downloader
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.1.3
 // @description  Ein Tampermonkey-Script um Manga-Kapitel von http://onepiece-tube.com und http://naruto-tube.org als PDF herunterzuladen.
 // @author       LoudBomb
+// @license      MIT
 // @icon         https://i.imgur.com/SAtFjAa.png
 // @match        http://onepiece-tube.com/kapitel-mangaliste*
+// @match        https://onepiece-tube.com/kapitel-mangaliste*
 // @match        http://manga-lesen.com/kapitel/*
+// @match        https://manga-lesen.com/kapitel/*
 // @match        http://naruto-tube.org/boruto-kapitel-mangaliste*
+// @match        https://naruto-tube.org/boruto-kapitel-mangaliste*
 // @match        http://naruto-tube.org/manga/boruto-kapitel/*
+// @match        https://naruto-tube.org/manga/boruto-kapitel/*
 // @match        http://naruto-tube.org/shippuuden-kapitel-mangaliste*
+// @match        https://naruto-tube.org/shippuuden-kapitel-mangaliste*
 // @match        http://naruto-tube.org/manga/shippuuden-kapitel/*
+// @match        https://naruto-tube.org/manga/shippuuden-kapitel/*
 // @grant        none
-// @homepage     https://loudbomb93.github.io/one-piece-manga-downloader/
+// @homepage     https://loudbomb93.github.io/manga-tube-downloader/
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
 // ==/UserScript==
 
@@ -33,6 +40,7 @@
     var sKapitel = "test";
     var sName = "";
     var iSeiten = 0;
+    var iSeitenIndex = 4;
 
     /**-----------------initial setup per Page -----------*/
     if((/boruto/).test(document.location.pathname)){
@@ -47,8 +55,9 @@
     }
     if((/onepiece/).test(document.location.href)){
         sDocname = "One Piece";
-        sIMGsrc = "http://manga-lesen.com/kapitel/";
+        sIMGsrc = "https://manga-lesen.com/kapitel/";
         sParenthostname = "onepiece-tube.com";
+        iSeitenIndex = 2;
     }
 
     /**Helper function inIframe
@@ -67,7 +76,7 @@
         for(var p = 1; p <=Object.keys(window.oFinal).length; p++){
             var sKey = p.toString().length === 2 ? p.toString() : "0" + p;
             if(window.oFinal[sKey][0] !== "dne"){
-                if(window.oFinal[sKey][1] > 910){
+                if(window.oFinal[sKey][1] > window.oFinal[sKey][2]){
                     doc.addImage(window.oFinal[sKey][0], 'PNG', 0, 0, 210, 148);
                 } else {
                     doc.addImage(window.oFinal[sKey][0], 'PNG', 0, 0, 210, 297);
@@ -96,7 +105,7 @@
     };
     /**----------------------------------------------------------
 
-     /**------------ html5 Postmessage Function iFrame---------------------------*/
+    /**------------ html5 Postmessage Function iFrame---------------------------*/
     function createiFrame(i, imgtype, element){
         $('<iframe>', {
             src: aIMGUrl[i] + imgtype,
@@ -116,7 +125,7 @@
         }else if(evt.data[1] === "NF"){
             window.oFinal[evt.data[0]] = ["dne"];
         }else if(evt.data[1] === "found"){
-            window.oFinal[evt.data[0]] = [evt.data[2], evt.data[3]];
+            window.oFinal[evt.data[0]] = [evt.data[2], evt.data[3], evt.data[4]];
         }
         window.checkFinal(window.oFinal);
     }
@@ -165,18 +174,26 @@
             //console.log("FOUND :" + sTitle + "|" + document.location.pathname);
             var bimg = $("img")[0];
             var bwidth = bimg.width;
+            var bheight = bimg.height;
             var imgData = getBase64Image(bimg);
-            parent.window.postMessage([sPage, "found", imgData, bwidth], "*");
+            parent.window.postMessage([sPage, "found", imgData, bwidth, bheight], "*");
         }
     }
 
 
     /** --------------------Setze Download-Buttons-----------------------------------------*/
     if(document.location.hostname === sParenthostname && $(".sagatable .list tbody").length !== 0){
-        $(".sagatable .list tbody").find("[onclick]").each(function(){
+        if(sParenthostname === "onepiece-tube.com"){
+             $(".sagatable .list tbody").find("[onclick]").parent("tr").each(function(){
             $(this).prop("onclick", null).off("click");
             $(this).find('td:eq(2)').after('<td> <button class="btn success LoudBomb-btn" >Download</button> </td>');
         })
+        }else{
+         $(".sagatable .list tbody").find("[onclick]").each(function(){
+            $(this).prop("onclick", null).off("click");
+            $(this).find('td:eq(2)').after('<td> <button class="btn success LoudBomb-btn" >Download</button> </td>');
+         })
+        }
     }
     /** --------------------Add function to Button-Click-----------------------------------------*/
     $(".LoudBomb-btn").click(function(){
@@ -185,20 +202,23 @@
         window.oFinal = {};
         $(".LoudBomb-iframe-ID").remove()
         //------------------------------------
-        var oInfo = $(this).parents("tr.mediaitem").children();
+        var oInfo = $(this).parents("tr").children();
         if(typeof oInfo !== "undefined" && Object.keys(oInfo).length !== 0){
             elem = $(this);
             elem.text("Converting to PDF");
             elem.css("background-color", "#f7d219");
-            sKapitel = (/^\d{1,3}$/g).test(oInfo[0].innerText) ? oInfo[0].innerText : false;
+            sKapitel = (/^\d{1,4}$/g).test(oInfo[0].innerText) ? oInfo[0].innerText : false;
             if(sKapitel.length === 1){
-                sKapitel = "00" + sKapitel;
+                sKapitel = "000" + sKapitel;
             }else if (sKapitel.length === 2){
+                sKapitel = "00" + sKapitel;
+            }
+            else if (sKapitel.length === 3){
                 sKapitel = "0" + sKapitel;
             }
             sName = oInfo[1].innerText;
-            var sOnlineStatus = oInfo[2].innerText.replace(" ", "");
-            iSeiten = parseInt(oInfo[4].innerText);
+            //var sOnlineStatus = oInfo[2].innerText.replace(" ", "");
+            iSeiten = parseInt(oInfo[iSeitenIndex].innerText);
             window.aimg = [];
             for(var keys = 1; keys <= iSeiten; keys++){
                 var sSeite = keys.toString().length === 2 ? keys.toString() : "0" + keys;
