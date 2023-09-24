@@ -7,6 +7,7 @@
 // @license      MIT
 // @icon         https://i.imgur.com/SAtFjAa.png
 // @match        https://onepiece-tube.com/manga/kapitel-mangaliste*
+// @match        https://onepiece-tube.com/manga/kapitel/*
 // @match        http://manga-lesen.com/kapitel/*
 // @match        https://manga-lesen.com/kapitel/*
 // @match        http://naruto-tube.org/boruto-kapitel-mangaliste*
@@ -28,9 +29,11 @@
      * JsPDF wird im head eingebunden              */
     $("head").append('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js" integrity="sha384-NaWTHo/8YCBYJ59830LTz/P4aQZK1sS0SneOgAvhsIl3zBu8r9RevNg5lHCHAuQ/" crossorigin="anonymous"></script>');
 
-    /**------------------set Variables-----------------*/
-    /**Helper function inIframe
-     * Checkt ob sich ein element inerhalb eines iFrames befindet oder nicht */
+/**------------------set Variables-----------------*/
+window.oChapter = {};
+window.number_of_pages = 0;
+/**Helper function inIframe
+ * Checkt ob sich ein element inerhalb eines iFrames befindet oder nicht */
  function inIframe() {
     try {
         return window.self !== window.top;
@@ -39,19 +42,84 @@
     }
 }
 
+ /** ---------------CreatePDF with jsPDF-----------------*/
+ function createpdf(){
+    var doc = new jsPDF();
+    for(var p = 1; p <=Object.keys(window.oChapter).length; p++){
+        if(window.oChapter[p].img_width > window.oChapter[p].img_height){
+            doc.addImage(window.oChapter[p].base64img, 'PNG', 0, 0, 210, 148);
+        } else {
+            doc.addImage(window.oChapter[p].base64img, 'PNG', 0, 0, 210, 297);
+        }
+        if(p <Object.keys(window.oChapter).length) {
+            doc.addPage();
+        }  
+    }
+    //doc.save(sDocname + " " + sKapitel + " - " + sName+ ".pdf");
+    var oDoc = window.chapter_info;
+    doc.save(oDoc.number + " - " + oDoc.name + ".pdf");
+
+    //reset variables
+    window.oChapter = {};
+    window.number_of_pages = 0;
+    var update_button = $("#lb-active")[0];
+    update_button.className = "btn btn-success";
+    update_button.innerText = "Completed"
+    update_button.removeAttribute("id");
+}
+//Check ob alle images des chapters da sind -> wenn ja erstell pdf
+function checkFinal(image_info){
+    if(typeof window.oChapter[image_info.page] === "undefined"){
+        window.oChapter[image_info.page] = image_info
+    }
+    if(Object.keys(window.oChapter).length === number_of_pages){
+        createpdf();
+    }
+}
+
+/**-------------Convert image to base64 Function-------------------- */
+    function getBase64Image(page, img_url) {
+        const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = img_url;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const base64data = canvas.toDataURL('image/jpeg');
+                //console.log("base64: encoded");
+                var oIMG = {
+                   page : page,
+                   img_width :  img.width,
+                   img_height : img.height,
+                   base64img : base64data
+                }
+                checkFinal(oIMG);
+        };
+    }
+    /**------------------------------------------------------------------- */
+
 /**------------ html5 Postmessage Function iFrame---------------------------*/
 function displayMessage (evt) {
-    //console.log("iFrame MSG: " + evt.data + " from " + evt.origin);
-    //Wenn das iFrame mit jpg antwortet wurde kein jpg gefunden und es wird ein neues iframe mit .png erstellt
-    if(evt.data[1] === "jpg"){
-        var Arraykey = parseInt(evt.data[0])-1;
-        createiFrame(Arraykey, ".png", elem);
-    }else if(evt.data[1] === "NF"){
-        window.oFinal[evt.data[0]] = ["dne"];
-    }else if(evt.data[1] === "found"){
-        window.oFinal[evt.data[0]] = [evt.data[2], evt.data[3], evt.data[4]];
+    if(
+        typeof evt.data[0] !== "undefined" &&
+        typeof evt.data[0].current_page !== "undefined" &&
+        typeof evt.data[0].number_of_pages !== "undefined" &&
+        typeof evt.data[0].img_source !== "undefined"
+    ){
+        var pagedata = evt.data[0]
+        if(typeof pagedata.number_of_pages !== "undefined" && window.number_of_pages === 0){
+            window.number_of_pages = pagedata.number_of_pages;
+        }
+        getBase64Image(pagedata.current_page, pagedata.img_source);
+        console.log("Converting: " +  pagedata.current_page + "/" +  window.number_of_pages);
+        if(pagedata.current_page <= pagedata.number_of_pages){
+            var curr_src = $("#lb_info_iframe")[0].src;
+            $("#lb_info_iframe")[0].src = curr_src.replace(/\/[^\/]*$/, "/" + (pagedata.current_page+1));
+        }     
     }
-    //window.checkFinal(window.oFinal);
 }
 
 if (window.addEventListener) {
@@ -61,31 +129,16 @@ else {
     window.attachEvent("onmessage", displayMessage);
 }
 /**------------------------------------------------------------------- */
+//Get correct img source from iFrame
 if(inIframe()){
-    debugger;
-    var sTitle = document.title;
-    //TODO: function welche auch Pages über 100 erkennt.
-    var sPage = document.location.pathname.replace(/(.jpg|.png)/, "").substr(-2, 2);
-    if(sTitle === "500 Internal Server Error" || sTitle === "404 Not Found"){
-        if((/.*\.jpg$/).test(document.location.pathname)){
-            //console.log("JPG NOT FOUND:  " + document.location.pathname)
-            parent.window.postMessage([sPage, "jpg"], "*");
-        }
-        else if((/.*\.png$/).test(document.location.pathname)){
-            //console.log(document.location.pathname + " does not exist")
-            parent.window.postMessage([sPage, "NF"], "*");
-        }
+    var ChapterInfo = {
+        current_page : parseInt($(".page-item.active")[0].innerText),
+        img_source : $("img")[0].src,
+        number_of_pages : $(".page-item").length
     }
-    else {
-        //console.log("FOUND :" + sTitle + "|" + document.location.pathname);
-        var bimg = $("img")[0];
-        var bwidth = bimg.width;
-        var bheight = bimg.height;
-        var imgData = getBase64Image(bimg);
-        parent.window.postMessage([sPage, "found", imgData, bwidth, bheight], "*");
-    }
-}
-
+    //Send Information to parent
+    parent.window.postMessage([ChapterInfo], "*");
+}else{
 //--------------SETTING Download Button---------------------------
 var headingnames = $(".segment-heading").find(".segment-name");
 
@@ -105,7 +158,7 @@ for (var i = 0; i < bodynames.length; i++) {
     bodynames[i].parentElement.removeAttribute("href");
     var dwbutton = document.createElement("button"); 
     dwbutton.innerText = "Download  ";
-    dwbutton.className = "btn success LoudBomb-btn";
+    dwbutton.className = "btn";
     dwbutton.setAttribute("chapter_href", kapitel_href);
     dwbutton.onclick = download_pdf;
     var fa_icon = document.createElement("i");
@@ -117,13 +170,17 @@ for (var i = 0; i < bodynames.length; i++) {
 
 function download_pdf(){
     var parentrow_elem = $(this).parent();
-    var chapter = {
+    window.chapter_info = {
         name : parentrow_elem.find(".segment-name")[0].innerText,
         number : parentrow_elem.find(".segment-number")[0].innerText,
         pages : parentrow_elem.find(".segment-pages")[0].innerText
     };
     console.log("Starting Download");
-    console.log(chapter);
+    console.log(window.chapter_info);
+
+    this.className += " btn-info";
+    this.id = "lb-active";
+    this.innerText = "Converting";
 
     $('<iframe>', {
         src: this.getAttribute("chapter_href"),
@@ -135,5 +192,7 @@ function download_pdf(){
         scrolling: 'no'
     }).appendTo(this)
 }
+}
+
 
 })();
