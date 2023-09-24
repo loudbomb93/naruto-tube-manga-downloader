@@ -2,22 +2,12 @@
 // @name         Manga-Tube Downloader
 // @namespace    http://tampermonkey.net/
 // @version      3.0.0
-// @description  Ein Tampermonkey-Script um Manga-Kapitel von https://onepiece-tube.com/ und https://naruto-tube.org als PDF herunterzuladen.
+// @description  Ein Tampermonkey-Script um Manga-Kapitel von https://onepiece-tube.com/ als PDF herunterzuladen.
 // @author       LoudBomb
 // @license      MIT
 // @icon         https://i.imgur.com/SAtFjAa.png
 // @match        https://onepiece-tube.com/manga/kapitel-mangaliste*
 // @match        https://onepiece-tube.com/manga/kapitel/*
-// @match        http://manga-lesen.com/kapitel/*
-// @match        https://manga-lesen.com/kapitel/*
-// @match        http://naruto-tube.org/boruto-kapitel-mangaliste*
-// @match        https://naruto-tube.org/boruto-kapitel-mangaliste*
-// @match        http://naruto-tube.org/manga/boruto-kapitel/*
-// @match        https://naruto-tube.org/manga/boruto-kapitel/*
-// @match        http://naruto-tube.org/shippuuden-kapitel-mangaliste*
-// @match        https://naruto-tube.org/shippuuden-kapitel-mangaliste*
-// @match        http://naruto-tube.org/manga/shippuuden-kapitel/*
-// @match        https://naruto-tube.org/manga/shippuuden-kapitel/*
 // @grant        none
 // @homepage     https://loudbomb93.github.io/manga-tube-downloader/
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
@@ -34,6 +24,7 @@
   /**------------------set Variables-----------------*/
   window.oChapter = {};
   window.number_of_pages = 0;
+  window.filename = "";
   /**Helper function inIframe
    * Checkt ob sich ein element inerhalb eines iFrames befindet oder nicht */
   function inIframe() {
@@ -59,7 +50,7 @@
     }
     //doc.save(sDocname + " " + sKapitel + " - " + sName+ ".pdf");
     var oDoc = window.chapter_info;
-    doc.save(oDoc.number + " - " + oDoc.name + ".pdf");
+    doc.save(window.filename + oDoc.number + " - " + oDoc.name + ".pdf");
 
     //reset variables
     window.oChapter = {};
@@ -148,6 +139,12 @@
     //Send Information to parent
     parent.window.postMessage([ChapterInfo], "*");
   } else {
+    //Setze filename aufgrund der domain
+    var host = document.location.hostname;
+    if (host.indexOf("onepiece") !== -1) {
+      window.filename = "One Piece";
+    }
+
     //--------------SETTING Download Button---------------------------
     var headingnames = $(".segment-heading").find(".segment-name");
 
