@@ -11,6 +11,8 @@
 // @grant        none
 // @homepage     https://loudbomb93.github.io/manga-tube-downloader/
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
+// @downloadURL https://update.greasyfork.org/scripts/389324/Manga-Tube%20Downloader.user.js
+// @updateURL https://update.greasyfork.org/scripts/389324/Manga-Tube%20Downloader.meta.js
 // ==/UserScript==
 
 (function () {
@@ -40,17 +42,16 @@
     var doc = new jsPDF();
     for (var p = 1; p <= Object.keys(window.oChapter).length; p++) {
       if (window.oChapter[p].img_width > window.oChapter[p].img_height) {
-        doc.addImage(window.oChapter[p].base64img, "PNG", 0, 0, 210, 148);
+        doc.addPage('a4', 'landscape');
+        doc.addImage(window.oChapter[p].base64img, "PNG", 0, 0, 297, 210);
       } else {
+        if(p !== 1){doc.addPage('a4', 'portrait');}
         doc.addImage(window.oChapter[p].base64img, "PNG", 0, 0, 210, 297);
-      }
-      if (p < Object.keys(window.oChapter).length) {
-        doc.addPage();
       }
     }
     //doc.save(sDocname + " " + sKapitel + " - " + sName+ ".pdf");
     var oDoc = window.chapter_info;
-    doc.save(window.filename + oDoc.number + " - " + oDoc.name + ".pdf");
+    doc.save(window.filename + " " + oDoc.number + " - " + oDoc.name + ".pdf");
 
     //reset variables
     window.oChapter = {};
