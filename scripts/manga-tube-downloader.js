@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Manga-Tube Downloader
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
-// @description  Ein Tampermonkey-Script um Manga-Kapitel von https://onepiece-tube.com/ als PDF herunterzuladen.
+// @version      3.0.1
+// @description  Ein Tampermonkey-Script um Manga-Kapitel von https://onepiece.tube/ als PDF herunterzuladen.
 // @author       LoudBomb
 // @license      MIT
 // @icon         https://i.imgur.com/SAtFjAa.png
-// @match        https://onepiece-tube.com/manga/kapitel-mangaliste*
-// @match        https://onepiece-tube.com/manga/kapitel/*
+// @match        https://onepiece.tube/manga/kapitel-mangaliste*
+// @match        https://onepiece.tube/manga/kapitel/*
 // @grant        none
 // @homepage     https://loudbomb93.github.io/manga-tube-downloader/
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
@@ -111,7 +111,7 @@
             }
             getBase64Image(pagedata.current_page, pagedata.img_source);
             console.log('Converting: ' + pagedata.current_page + '/' + window.number_of_pages);
-            if (pagedata.current_page <= pagedata.number_of_pages) {
+            if (pagedata.current_page <= window.number_of_pages) {
                 var curr_src = $('#lb_info_iframe')[0].src;
                 $('#lb_info_iframe')[0].src = curr_src.replace(/\/[^\/]*$/, '/' + (pagedata.current_page + 1));
             }
@@ -129,7 +129,7 @@
         var ChapterInfo = {
             current_page: parseInt($('.page-item.active')[0].innerText),
             img_source: $('img')[0].src,
-            number_of_pages: $('.page-item').length
+            number_of_pages: $('.page-item').length + 1
         };
         //Send Information to parent
         parent.window.postMessage([ChapterInfo], '*');
@@ -176,6 +176,9 @@
                 number: parentrow_elem.find('.segment-number')[0].innerText,
                 pages: parentrow_elem.find('.segment-pages')[0].innerText
             };
+            if (typeof window.chapter_info.pages !== 'undefined' || window.chapter_info.pages !== null) {
+                window.number_of_pages = parseInt(window.chapter_info.pages);
+            }
             console.log('Starting Download');
             console.log(window.chapter_info);
 
